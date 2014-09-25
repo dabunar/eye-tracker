@@ -32,6 +32,14 @@ for run =1:length(matrices{subj})           % take the maximum of runs
 end
 end
 
+a = zeros(1, MaxiMatrixQ);
+b = zeros(1, MaxiMatrixQ);
+c = zeros(1, MaxiMatrixQ);
+d = zeros(1, MaxiMatrixQ);
+
+figure(1)
+figure(2)
+
 for subj = 1: n_subjects %length(matrices);  % Nimm alle Subj von matrices 
 
     
@@ -62,7 +70,9 @@ end             % ends loof for the runs for one subj
 vectors{subj}.TimeMean = TimeMean;
 vectors{subj}.SpaceMean = SpaceMean;
 
-figure (1)
+figure(1)
+subplot(3, 5, subj);
+xlim([500., 4000.]);
 
 % plot(C{1});       % to verify if its the mean or the
 % hold on
@@ -90,19 +100,27 @@ for run = 1: length(matrices{subj});           % geh durch alle Runs von Proband
     MatrixQ = nan(264, MaxiMatrixQ);        % mach 264 linien und den maximum and Spalten die du davor shcon ausgerechnet hattest
     MatrixQ(:,1:length(matrices{subj}{run}.BaselinedQ)) = matrices{subj}{run}.BaselinedQ;  % mach in den 500-1000 sample die baseline rein (=0)
     
+    MatrixE = nan(264, MaxiMatrixE); 
+    MatrixE(:,1:length(matrices{subj}{run}.MatrixE)) = matrices{subj}{run}.MatrixE;
+    
     % S==>S (blue)
     SpaceSpaceDim = find(matrix(:,5)==1);    % find the indexes for question : Space Space
     SpaceSpaceCloseDim = find(matrix(:,5)==1 & matrix(:,6)==1);
+    SpaceSpaceFarDim = find(matrix(:,5)==1 & matrix(:,6)==2);
     B = MatrixQ(SpaceSpaceDim,:);       % find the equivalent lines for your PS data for Space and put it into B, so B contains all PSdata for Space
     SpaceSpaceMean(run,:)=(nanmean(B,1));                   % take the mean and ignor the Nans of your Space PS data and put it into C
+    B = MatrixE(SpaceSpaceCloseDim,:);
+    SpaceSpaceCloseMean(run,:)=(nanmean(B,1));
+    1
 end
 
+a = a + nanmean(SpaceSpaceMean,1);
 vectors{subj}.SpaceSpaceDim = SpaceSpaceDim;
 
-figure (2)
-
-plot(nanmean(SpaceSpaceMean,1),'color',[1 0 1])                             % plot all the means
-
+figure(2)
+subplot(3, 5, subj);
+plot(nanmean(SpaceSpaceMean,1),'color',[1 0 1])                        % plot all the means
+xlim([500., 4000.]);
 
 % T==>S (blue light purple)
 for run = 1: length(matrices{subj});
@@ -119,6 +137,7 @@ for run = 1: length(matrices{subj});
     
 end
 
+b = b + nanmean(TimeSpaceMean,1);
 vectors{subj}.TimeSpaceDim = TimeSpaceDim;
 
 hold on
@@ -149,6 +168,7 @@ for run = 1: length(matrices{subj});
     
 end
 
+c = c + nanmean(TimeTimeMean,1);
 vectors{subj}.TimeTimeDim = TimeTimeDim;
 
 hold on
@@ -174,6 +194,7 @@ for run = 1: length(matrices{subj});
     
 end
 
+d = d + nanmean(SpaceTimeMean, 1);
 vectors{subj}.SpaceTimeDim = SpaceTimeDim;
 
 hold on
@@ -185,9 +206,24 @@ SpaceTimeDim  = [];F =[]; SpaceTimeMean = [];
 xlabel('Time')
 ylabel('Pupilsize in arbitrary units')
 
+end % subj loop
+
+a = a / n_subjects;
+b = b / n_subjects;
+c = c / n_subjects;
+d = d / n_subjects;
+figure(2);
+subplot(3, 5, 13:15)
+plot(a,'color',[1 0 1])
+hold on
+plot(b,'color',[0 0 1])
+hold on
+plot(c,'color', 'green')
+hold on
+plot(d,'color',[1 0 0])
+xlim([500., 4000.]);
 legend('S==>S','T==>S','T==>T','S==>T')
 
-end % subj loop
 
 
 %% mark events like Question or Event and Response... but doesnt work for now
