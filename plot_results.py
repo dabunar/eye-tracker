@@ -1,4 +1,4 @@
-# Author: Karin Pestke,
+# Author: PESTKE Karin,
 #         DOHMATOB Elvis
 
 import os
