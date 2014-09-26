@@ -1,17 +1,22 @@
 # Author: Karin Pestke,
 #         DOHMATOB Elvis
 
+import os
 import glob
 import numpy as np
-import pylab as pl
 import h5py
 from sklearn.externals.joblib import Memory
 
+DATA_DIR = "/home/elvis/"  # where the subject-specific .mat files are located
+
 
 def loadmat():
-    # subject .mat files
+    """Function to load subject-specific .mat files and construct
+    mean data matrices."""
+
+    # fetch subject .mat files
     subject_mats = sorted(
-        glob.glob("/home/elvis/*subj_matrix.mat"))
+        glob.glob(os.path.join(DATA_DIR, "*subj_matrix.mat")))
 
     # get length of shortest run for a subject
     min_l = np.inf
@@ -47,6 +52,8 @@ def loadmat():
             spacetime = np.ndarray((n_runs, min_l))
             timespace = np.ndarray((n_runs, min_l))
             timetime = np.ndarray((n_runs, min_l))
+
+            # loop on subject runs
             for run in xrange(n_runs):
                 matrix = np.array(f[f['subj_matrix'][run, 0]]['matrix'])
                 baselinedq = np.array(
@@ -64,6 +71,8 @@ def loadmat():
                     baselinedq[:min_l, matrix[4, :] == 3], axis=1)
                 timetime[run] = np.nanmean(
                     baselinedq[:min_l, matrix[3, :] == 4], axis=1)
+
+            # house-keeping
             space_[i] = np.nanmean(space, axis=0)
             time_[i] = np.nanmean(time, axis=0)
             spacespace_[i] = np.nanmean(spacespace, axis=0)
@@ -77,20 +86,23 @@ def loadmat():
 
     return space_, time_, spacespace_, spacetime_, timespace_, timetime_
 
+### Load the data ############################################################
 space_, time_, spacespace_, spacetime_, timespace_, timetime_ = Memory(
     "cache").cache(loadmat)()
 
-# visualization
+### Visualization #############################################################
 import matplotlib.pyplot as plt
 fig1 = plt.figure(figsize=(13.5, 7))
 fig2 = plt.figure(figsize=(13.5, 7))
 for i in xrange(space_.shape[0]):
+    # SpaceSpace vs TimeDim
     plt.figure(fig1.number)
     plt.subplot(4, 3, i + 1)
     plt.plot(space_[i], linewidth=2, label="SpaceDim")
     plt.plot(time_[i], linewidth=2, label="TimeeDim",)
     plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 
+    # SpaceSpaceDim vs SpaceTimeDim vs TimeSpaceDim vs TimeTimeDim
     plt.figure(fig2.number)
     plt.subplot(4, 3, i + 1)
     plt.plot(spacespace_[i], linewidth=2, label="SpaceSpaceDim")
@@ -99,6 +111,7 @@ for i in xrange(space_.shape[0]):
     plt.plot(timetime_[i], linewidth=2, label="TimeTimeDim")
     plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 
+# SpaceSpace vs TimeDim
 plt.figure(fig1.number)
 plt.subplot2grid((4, 3), (3, 0), colspan=3)
 plt.plot(np.nanmean(space_, axis=0), label="SpaceDim",
@@ -109,6 +122,7 @@ plt.legend(loc="best", prop=dict(size=15))
 plt.xlim(500.)
 
 
+# SpaceSpaceDim vs SpaceTimeDim vs TimeSpaceDim vs TimeTimeDim
 plt.figure(fig2.number)
 plt.subplot2grid((4, 3), (3, 0), colspan=3)
 plt.plot(np.nanmean(spacespace_, axis=0), label="SpaceSpaceDim",
@@ -121,14 +135,6 @@ plt.plot(np.nanmean(timetime_, axis=0), label="TimeTimeDim",
         linewidth=4)
 plt.legend(loc="best", prop=dict(size=15), ncol=2)
 plt.xlim(500.)
-
-# plt.xlabel("Time (milliseconds)", fontsize=25)
-# plt.ylabel("Pupil size (arbitrary units)", fontsize=25)
-# plt.tick_params(axis='both', which='major', labelsize=20)
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.show()
 
-
-# for subject_data in matrices:
-#     r = [run_data.MatrixQ[:, :3269] for run_data in subject_data if run_data]
-#     mean = np.nanmean(r, axis=0)
