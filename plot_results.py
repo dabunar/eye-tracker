@@ -1,8 +1,8 @@
-# Author: PESTKE Karin,
-#         DOHMATOB Elvis
+# Author: DOHMATOB Elvis
 
 import os
 import glob
+import traceback
 import numpy as np
 import h5py
 from sklearn.externals.joblib import Memory
@@ -19,8 +19,8 @@ def loadmat():
         glob.glob(os.path.join(DATA_DIR, "*subj_matrix.mat")))
 
     # get length of shortest run for a subject
-    min_l = np.inf
-    n_subjects = 0
+    min_run_length = np.inf
+    good_subject_mats = []
     for subject_mat in subject_mats:
         try:
             f = h5py.File(subject_mat)
@@ -28,61 +28,63 @@ def loadmat():
             l = np.min(
                 [f[f['subj_matrix'][run, 0]]["MatrixQ"].shape[0]
                  for run in xrange(n_runs)])
-            if l < min_l:
-                min_l = l
-            n_subjects += 1
+            if l < min_run_length:
+                min_run_length = l
+            good_subject_mats.append(subject_mat)
         except ValueError:
+            # catch bad subj_matrix.mat
+            print ">>>Offending .mat file: %s" % subject_mat
+            print traceback.format_exc()
             continue
+
+    n_subjects = len(good_subject_mats)
+    print "\r\nFound %i/%i good subject(s).\r\n" % (
+        n_subjects, len(subject_mats))
 
     # main loop
-    space_ = np.ndarray((n_subjects, min_l))
-    time_ = np.ndarray((n_subjects, min_l))
-    spacespace_ = np.ndarray((n_subjects, min_l))
-    spacetime_ = np.ndarray((n_subjects, min_l))
-    timespace_ = np.ndarray((n_subjects, min_l))
-    timetime_ = np.ndarray((n_subjects, min_l))
-    i = 0  # subject counter
-    for subject_mat in subject_mats:
-        try:
-            f = h5py.File(subject_mat)
-            n_runs = f['subj_matrix'].shape[0]
-            space = np.ndarray((n_runs, min_l))
-            time = np.ndarray((n_runs, min_l))
-            spacespace = np.ndarray((n_runs, min_l))
-            spacetime = np.ndarray((n_runs, min_l))
-            timespace = np.ndarray((n_runs, min_l))
-            timetime = np.ndarray((n_runs, min_l))
+    space_ = np.ndarray((n_subjects, min_run_length))
+    time_ = np.ndarray((n_subjects, min_run_length))
+    spacespace_ = np.ndarray((n_subjects, min_run_length))
+    spacetime_ = np.ndarray((n_subjects, min_run_length))
+    timespace_ = np.ndarray((n_subjects, min_run_length))
+    timetime_ = np.ndarray((n_subjects, min_run_length))
+    for i, subject_mat in enumerate(good_subject_mats):
+        print "\tHandling %s" % subject_mat
+        f = h5py.File(subject_mat)
+        n_runs = f['subj_matrix'].shape[0]
+        space = np.ndarray((n_runs, min_run_length))
+        time = np.ndarray((n_runs, min_run_length))
+        spacespace = np.ndarray((n_runs, min_run_length))
+        spacetime = np.ndarray((n_runs, min_run_length))
+        timespace = np.ndarray((n_runs, min_run_length))
+        timetime = np.ndarray((n_runs, min_run_length))
 
-            # loop on subject runs
-            for run in xrange(n_runs):
-                matrix = np.array(f[f['subj_matrix'][run, 0]]['matrix'])
-                baselinedq = np.array(
-                    f[f['subj_matrix'][run, 0]]['BaselinedQ'])
-                space[run] = np.nanmean(
-                    baselinedq[:min_l, matrix[3, :] == 1], axis=1)
-                time[run] = np.nanmean(
-                    baselinedq[:min_l, matrix[3, :] == 2], axis=1)
+        # loop on subject runs
+        for run in xrange(n_runs):
+            matrix = np.array(f[f['subj_matrix'][run, 0]]['matrix'])
+            baselinedq = np.array(
+                f[f['subj_matrix'][run, 0]]['BaselinedQ'])
+            space[run] = np.nanmean(
+                baselinedq[:min_run_length, matrix[3, :] == 1], axis=1)
+            time[run] = np.nanmean(
+                baselinedq[:min_run_length, matrix[3, :] == 2], axis=1)
 
-                spacespace[run] = np.nanmean(
-                    baselinedq[:min_l, matrix[4, :] == 1], axis=1)
-                spacetime[run] = np.nanmean(
-                    baselinedq[:min_l, matrix[4, :] == 2], axis=1)
-                timespace[run] = np.nanmean(
-                    baselinedq[:min_l, matrix[4, :] == 3], axis=1)
-                timetime[run] = np.nanmean(
-                    baselinedq[:min_l, matrix[3, :] == 4], axis=1)
+            spacespace[run] = np.nanmean(
+                baselinedq[:min_run_length, matrix[4, :] == 1], axis=1)
+            spacetime[run] = np.nanmean(
+                baselinedq[:min_run_length, matrix[4, :] == 2], axis=1)
+            timespace[run] = np.nanmean(
+                baselinedq[:min_run_length, matrix[4, :] == 3], axis=1)
+            timetime[run] = np.nanmean(
+                baselinedq[:min_run_length, matrix[3, :] == 4], axis=1)
 
-            # house-keeping
-            space_[i] = np.nanmean(space, axis=0)
-            time_[i] = np.nanmean(time, axis=0)
-            spacespace_[i] = np.nanmean(spacespace, axis=0)
-            spacetime_[i] = np.nanmean(spacetime, axis=0)
-            timespace_[i] = np.nanmean(timespace, axis=0)
-            timetime_[i] = np.nanmean(timetime, axis=0)
-            i += 1
-        except ValueError, e:
-            print subject_mat, e
-            continue
+        # house-keeping
+        space_[i] = np.nanmean(space, axis=0)
+        time_[i] = np.nanmean(time, axis=0)
+        spacespace_[i] = np.nanmean(spacespace, axis=0)
+        spacetime_[i] = np.nanmean(spacetime, axis=0)
+        timespace_[i] = np.nanmean(timespace, axis=0)
+        timetime_[i] = np.nanmean(timetime, axis=0)
 
     return space_, time_, spacespace_, spacetime_, timespace_, timetime_
 
@@ -137,4 +139,3 @@ plt.legend(loc="best", prop=dict(size=15), ncol=2)
 plt.xlim(500.)
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
 plt.show()
-
