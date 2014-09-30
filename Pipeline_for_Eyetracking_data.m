@@ -35,7 +35,7 @@ runlist1 ={{'run1';'run2';'run3';'run4'};...    % 1 sl
     {'run1';'run2';'run3';'run4'};...   %13 hr
     {'run1';'run2';'run3'; 'run4'};...          %14 mp
     {'run1';'run2';'run3';'run4';'run5'}};   % 15 mb
-    
+
 
 
 runlist ={{'Run1';'Run2';'Run3';'Run4'};...    % 1 sl
@@ -51,10 +51,10 @@ runlist ={{'Run1';'Run2';'Run3';'Run4'};...    % 1 sl
     {'Run1';'Run2';'Run3';'Run4'};...   %11 hR
     {'Run1';'Run2';'Run3'; 'Run4'};...          %12 mp
     {'Run1';'Run2';'Run3';'Run4';'Run5'}};   % 13 mb
-    
 
 
- load(['/neurospin/meg/meg_tmp/Karin_2013/Matlab_Eyetracking_data/scripts/samplelist&Miniblock.mat']);
+
+load(['/neurospin/meg/meg_tmp/Karin_2013/Matlab_Eyetracking_data/scripts/samplelist&Miniblock.mat']);
 % load(['G:\final scripts\samplelist&Miniblock.mat']);
 
 niplistOriginal = {'sl130503';'lm130479';'ma100253';'sg120518';'ms130534';'tk130502';...
@@ -79,16 +79,16 @@ RunlistOriginal = {{'run1_GD';'run2_GD';'run3_DG';'run4_DG'};...    % 1
     {'run1_GD';'run2_GD';'run3_DG';'run4_DG';'run5_GD'}};
 
 
-for i = 1:length(niplist)   % take all subjects from your niplist (without ms,jm, rb)
+for i = 1: length(niplist)   % take all subjects from your niplist (without ms,jm, rb)
     
     
     data_path = (['/neurospin/meg/meg_tmp/Karin_2013/Matlab_Eyetracking_data/eyelink_data/' niplist{i} '/']);  % go to the subj
-%    data_path = (['G:\eyelink_data\' niplist{i} '\']);   
-%    script_path = ('G:\final scripts');
-% %    
-for j = 1:length(runlist{i})    % der Run den du gerade benutzt
-    
-    
+    %    data_path = (['G:\eyelink_data\' niplist{i} '\']);
+    %    script_path = ('G:\final scripts');
+    % %
+    for j = 1:length(runlist{i})    % der Run den du gerade benutzt
+        
+        
         clearvars K
         clearvars L
         
@@ -107,17 +107,17 @@ for j = 1:length(runlist{i})    % der Run den du gerade benutzt
             
             if strfind(lower(RunlistOriginal{K}{l}), lower(runlist{i}{j}))==1    % if the arrey is empty il will give u a 1 if there are numbers then its not empty thus 0.
                 L = l;                                                           % wenn also runlist und runlistOriginal gleich sind, dann ist eigtl 1
-                                                                                 % und dann soll der sagen, dass es nicht empty ist                                                                  
+                % und dann soll der sagen, dass es nicht empty ist
             end
         end
-
+        
         
         
         
         %%%%%%%%%%%%%%%%%%%%%%%
         % filter .asci file
-        data = [];              
-        data = analiza_datos([data_path runlist1{i}{j} '.asc']);     
+        data = [];
+        data = analiza_datos([data_path runlist1{i}{j} '.asc']);
         
         %%%%%%%%%%%%%%%%%%%%%%%
         % Blink interpolation
@@ -128,7 +128,7 @@ for j = 1:length(runlist{i})    % der Run den du gerade benutzt
         Run = [];
         Run = RunstrComplete(data, niplist{i}, runlist{i}{j});   % i is the subj and j us the runnumber
         
-
+        
         Runbis = MatchTitles_v3(Run, samplelist, MiniBlock, niplistOriginal, RunlistOriginal, K, L);  %check subj and run
         clearvars Run
         
@@ -141,8 +141,9 @@ for j = 1:length(runlist{i})    % der Run den du gerade benutzt
         MatrixE = equalsizePSdataE(Runbis);    % PS during Event  not yet finished
         % equalsizePSdataR  % PS during Response  not yet finished
         
-        baselinedQ = BaselinedQ(MatrixQ, 500,1000);     % beginsample und endsample werden hier definiert
-
+                baselinedQ = BaselinedQ(MatrixQ, 500,1000);     % beginsample und endsample werden hier definiert
+        
+%         baselinedQ = BaselinedQ(matrices, MatrixQ, 500,1000);     % beginsample und endsample werden hier definiert
         
         %%%%%%%%%%%%%%%%%%%%%%%
         % THE MATRIX fct to have one matrix with all information
@@ -150,28 +151,25 @@ for j = 1:length(runlist{i})    % der Run den du gerade benutzt
         matrices{i}{j}.subject_id = niplist{i};  % nom du sujet
         matrices{i}{j}.matrix = matrix;  % cree la strucutre matrix pour tous les sujets et tous les runs
         matrices{i}{j}.Runbis = Runbis;   % ta runstructure avec toutes des données
-        matrices{i}{j}.MatrixQ = MatrixQ;       % PS data for all TrailID, c la matrix avec la meme taille de vecteurs (pour les plots)
-        matrices{i}{j}.MatrixE = MatrixE        % PS data for all eventID 
-        matrices{i}{j}.BaselinedQ = baselinedQ 
+        matrices{i}{j }.MatrixQ = MatrixQ;       % PS data for all TrailID, c la matrix avec la meme taille de vecteurs (pour les plots)
+        matrices{i}{j}.MatrixE = MatrixE        % PS data for all eventID
+        matrices{i}{j}.BaselinedQ = baselinedQ
     end     % ends for runlist
-   
-
+    
+    
     %%%%%%%%%%%%%%%%%%%%%%%
-    % Plot time courses and Bars for all subjects with mean etc
-%      PlotSwitchForAllSubj(matrices);
-%      saveas(gcf,'SwitchPlot.fig')
+%     % Plot time courses and Bars for all subjects with mean etc
+     PlotSwitchForAllSubj(matrices);
+     saveas(gcf,'SwitchPlot.fig')
     
-%   PlotDistance(matrices)
-%   saveas(gcf,'DistancePlot.fig')    
+   
+    % save subject-specific matrix data
+    subj_matrix = matrices{i};
+    save(['/neurospin/meg/meg_tmp/Karin_2013/Matlab_Eyetracking_data/Results/', niplist{i}, 'subj_matrix'] , 'subj_matrix', '-v7.3');
     
-
-% save subject-specific matrix data
-subj_matrix = matrices{i};
-save(['/neurospin/meg/meg_tmp/Karin_2013/Matlab_Eyetracking_data/Results/', niplist{i}, 'subj_matrix'] , 'subj_matrix', '-v7.3');
-
 end         % ends for niplist
 
-save('/neurospin/meg/meg_tmp/Karin_2013/Matlab_Eyetracking_data/Results/final_matrices' , 'matrices', '-v7.3');
+save('/neurospin/meg/meg_tmp/Karin_2013/Matlab_Eyetracking_data/Results/final_matricesBASELINE200bis1000' , 'matrices', '-v7.3');
 
 % ............................................
 

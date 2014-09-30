@@ -64,9 +64,11 @@ for block = 1:length(POS)                                  % for all blocks
                 ini = find(data.samples(:,1) == Time(tr)-1000);      % find in data samples the index when your event occurs
                 
                 if tr<length(Trial)
-                    fin = find(data.samples(:,1) == Time(tr+1)+1000);
+%                     fin = find(data.samples(:,1) == Time(tr+1)+1000);         %ancient, we took +2000msec 
+                fin = find(data.samples(:,1) == Time(tr+1)+3000);               % now we took +4000msecs (immer 1000 mehr als da steht)
                 else
-                    fin=size(data.samples+1000,1);
+%                     fin=size(data.samples+1000,1);
+                    fin=size(data.samples+3000,1);
                 end
                 
                 fin;               
